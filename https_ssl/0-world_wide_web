@@ -1,40 +1,10 @@
 #!/usr/bin/env bash
-# Function to fetch DNS record information
-get_record_info() {
-  local subdomain=$1
-  local domain=$2
+# accepts two different arguments
 
-  # Use dig to query the DNS record
-  local record=$(dig +short "$subdomain.$domain" A)
-  
-  # Check if record exists
-  if [[ -z "$record" ]]; then
-    echo "The subdomain $subdomain does not have a valid A record."
-  else
-    echo "The subdomain $subdomain is an A record and points to $record"
-  fi
-}
-
-# Ensure at least the domain argument is provided
-if [[ -z "$1" ]]; then
-  echo "Usage: $0 domain [subdomain]"
-  exit 1
-fi
-
-# Input arguments
-domain=$1
-subdomain=$2
-
-# If subdomain is provided, query it
-if [[ -n "$subdomain" ]]; then
-  get_record_info "$subdomain" "$domain"
+if [ $# -eq 1 ]; then 
+	dom="www.$1 lb-01.$1 web-01.$1 web-02.$1"
 else
-  # Default subdomains to query
-  default_subdomains=("www" "lb-01" "web-01" "web-02")
-  
-  # Loop through each default subdomain
-  for sub in "${default_subdomains[@]}"; do
-    get_record_info "$sub" "$domain"
-  done
+	dom="$2.$1"
 fi
 
+dig $dom | awk '/ANSWER SECTION:/ {getline; split($1,b,"."); print "The subdomain", b[1], "is an", $4, "record and points to", $5}' 
